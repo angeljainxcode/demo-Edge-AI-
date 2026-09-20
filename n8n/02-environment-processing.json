@@ -1,0 +1,236 @@
+{
+  "name": "02 — Environment Processing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "environment-processing",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8c73a990-0502-4708-a2e9-8262c7eb76d9",
+      "name": "Webhook",
+      "webhookId": "6ddb8ead-219b-4075-bb1f-3f193df67ff6"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a04b990e-74c8-4fb3-836d-515ad1e07582",
+              "name": "environment_id",
+              "value": "={{$json.environment_id}}",
+              "type": "string"
+            },
+            {
+              "id": "5e0cb59f-d4a2-4b0a-9b60-42c67b4a544c",
+              "name": "=temperature",
+              "value": "={{$json.temperature}}",
+              "type": "number"
+            },
+            {
+              "id": "ac90134e-a2df-4606-a3ff-d8c63dc13c98",
+              "name": "humidity",
+              "value": "={{$json.humidity}}",
+              "type": "number"
+            },
+            {
+              "id": "3483a4a6-fd89-48d0-bbed-b77dea435b0d",
+              "name": "=obstacle_detected",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "60d27d16-14ff-4024-9ebb-4408200e100b",
+              "name": "traffic_level",
+              "value": "={{$json.traffic_level}}",
+              "type": "string"
+            },
+            {
+              "id": "a618ec60-9b24-4e95-b77d-eeeaeeb42038",
+              "name": "x",
+              "value": "={{$json.x}}",
+              "type": "number"
+            },
+            {
+              "id": "34dc5236-92ca-418b-9002-63acdd2407ae",
+              "name": "y",
+              "value": "={{$json.y}}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "dfd084e2-6ba9-411a-97dc-c5e37c11009f",
+      "name": "Normalize Environment Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nlet environment_status = \"NORMAL\";\nlet risk_level = \"LOW\";\nlet recommended_action = \"CONTINUE\";\n\nif (d.obstacle_detected === true) {\n  environment_status = \"OBSTACLE\";\n  risk_level = \"HIGH\";\n  recommended_action = \"STOP_OR_REROUTE\";\n}\nelse if (d.traffic_level === \"high\") {\n  environment_status = \"CONGESTED\";\n  risk_level = \"MEDIUM\";\n  recommended_action = \"REDUCE_SPEED\";\n}\nelse if (d.temperature > 40 || d.temperature < 5) {\n  environment_status = \"EXTREME_TEMPERATURE\";\n  risk_level = \"MEDIUM\";\n  recommended_action = \"MONITOR_ENVIRONMENT\";\n}\nelse if (d.humidity > 85) {\n  environment_status = \"HIGH_HUMIDITY\";\n  risk_level = \"MEDIUM\";\n  recommended_action = \"MONITOR_ENVIRONMENT\";\n}\n\nreturn {\n  json: {\n    ...d,\n    environment_status,\n    risk_level,\n    recommended_action\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "e65aa3f1-4c26-4cbe-8656-71b8b1503e01",
+      "name": "Environment Analysis"
+    },
+    {
+      "parameters": {
+        "tableId": "robot_messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sender_id",
+              "fieldValue": "ENVIRONMENT_SYSTEM"
+            },
+            {
+              "fieldId": "receiver_id",
+              "fieldValue": "FLEET_CONTROLLER"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "ENVIRONMENT_UPDATE"
+            },
+            {
+              "fieldId": "position_x",
+              "fieldValue": "={{$json.x}}"
+            },
+            {
+              "fieldId": "position_y",
+              "fieldValue": "={{$json.y}}"
+            },
+            {
+              "fieldId": "intent",
+              "fieldValue": "={{$json.recommended_action}}"
+            },
+            {
+              "fieldId": "priority",
+              "fieldValue": "1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "d47241a2-a61d-42b4-a3a8-4e959811eb75",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "p9ddW1p6n0YIbhMK",
+          "name": "Supabase account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        0
+      ],
+      "id": "ea325012-77b9-4f48-8b57-641324b52c81",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "environment_id": "ZONE_01",
+          "temperature": 24.5,
+          "humidity": 58,
+          "obstacle_detected": false,
+          "traffic_level": "low",
+          "x": 5,
+          "y": 5
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Environment Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Environment Data": {
+      "main": [
+        [
+          {
+            "node": "Environment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Environment Analysis": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0017cc15-aaad-4aa0-911c-202b1931bbf0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f93385ad712da53658d4a49fcb3e181bf51a666ac22ed4a29e3633512e887175"
+  },
+  "nodeGroups": [],
+  "id": "PEgFh7sInFE8LmrX",
+  "tags": []
+}
