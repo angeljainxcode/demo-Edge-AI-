@@ -1,0 +1,208 @@
+{
+  "name": "05 — Telemetry Update",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telemetry-update",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cf03d388-cdd1-409c-aa74-8342329067fe",
+      "name": "05 — Telemetry Update",
+      "webhookId": "0e40bf4e-0964-4a3b-bc13-6252b8f726a7"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ed3508b-bf26-4545-869a-d8f21009b673",
+              "name": "vehicle_id",
+              "value": "={{$json.vehicle_id}}",
+              "type": "string"
+            },
+            {
+              "id": "10a42477-f307-4816-a650-e197e9b274e2",
+              "name": "x",
+              "value": "={{$json.x}}",
+              "type": "number"
+            },
+            {
+              "id": "274e827b-0a7a-4b8c-bc63-02a8c504b0e1",
+              "name": "y",
+              "value": "={{$json.y}}",
+              "type": "number"
+            },
+            {
+              "id": "c479c0b1-6db0-4545-bc04-34a9822c9d46",
+              "name": "speed",
+              "value": "={{$json.speed}}",
+              "type": "number"
+            },
+            {
+              "id": "997695eb-713d-459a-83fd-8ad305801781",
+              "name": "battery",
+              "value": "={{$json.battery}}",
+              "type": "string"
+            },
+            {
+              "id": "9fcd4bcb-a85d-4029-99ad-ffc85503405c",
+              "name": "status",
+              "value": "={{$json.status}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "c12aa19d-eb28-4814-ab6b-dc2df032786d",
+      "name": "Normalize Telemetry Data"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "robots",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "robot_id",
+              "condition": "eq",
+              "keyValue": "={{$json.vehicle_id}}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "x",
+              "fieldValue": "={{$json.x}}"
+            },
+            {
+              "fieldId": "y",
+              "fieldValue": "={{$json.y}}"
+            },
+            {
+              "fieldId": "velocity",
+              "fieldValue": "={{$json.speed}}"
+            },
+            {
+              "fieldId": "battery",
+              "fieldValue": "={{$json.battery}}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{$json.status}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "87a9f323-3984-449b-902a-49ab6b288ec8",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "p9ddW1p6n0YIbhMK",
+          "name": "Supabase account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        624,
+        0
+      ],
+      "id": "eba2cede-3a7e-48df-afc5-f403c5771edf",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "05 — Telemetry Update": [
+      {
+        "json": {
+          "vehicle_id": "AMR_01",
+          "x": 3.2,
+          "y": 4.8,
+          "speed": 1.6,
+          "battery": 89,
+          "status": "MOVING"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "05 — Telemetry Update": {
+      "main": [
+        [
+          {
+            "node": "Normalize Telemetry Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Telemetry Data": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ad9fccbf-0d70-4951-b235-b0c5aef6b4c2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f93385ad712da53658d4a49fcb3e181bf51a666ac22ed4a29e3633512e887175"
+  },
+  "nodeGroups": [],
+  "id": "e91TNGsezJ0Y3Ge0",
+  "tags": []
+}
