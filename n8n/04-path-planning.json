@@ -1,0 +1,236 @@
+{
+  "name": "04 — Path Planning",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "path-planning",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f07e25b4-478a-46bd-bd8c-b48c69d2ecdb",
+      "name": "04 — Path Planning",
+      "webhookId": "0baead37-55ec-48ed-8ba9-04e1ac40f11c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c950ee07-bb4f-4005-8553-e3567d8880c2",
+              "name": "vehicle_id",
+              "value": "={{$json.vehicle_id}}",
+              "type": "string"
+            },
+            {
+              "id": "570a28b4-da09-4386-bcdc-31e1a833505d",
+              "name": "=start_x",
+              "value": "={{$json.start_x}}",
+              "type": "number"
+            },
+            {
+              "id": "71ffcbea-cb93-4eed-bbb4-3f57a13314ee",
+              "name": "start_y",
+              "value": "={{$json.start_y}}",
+              "type": "number"
+            },
+            {
+              "id": "b4ad4e4c-a8ea-4089-b901-0d40aa9685ea",
+              "name": "goal_x",
+              "value": "={{$json.goal_x}}",
+              "type": "number"
+            },
+            {
+              "id": "22bd4279-6d68-43c7-a002-f4c596c8d4a3",
+              "name": "goal_y",
+              "value": "={{$json.goal_y}}",
+              "type": "number"
+            },
+            {
+              "id": "c3d38f1d-144d-4b0f-945c-6747930d9904",
+              "name": "obstacle_x",
+              "value": "={{$json.obstacle_x}}",
+              "type": "number"
+            },
+            {
+              "id": "720727aa-f4fb-4cf9-a75d-2ef9506faf53",
+              "name": "obstacle_y",
+              "value": "={{$json.obstacle_y}}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "ec4ede25-bed4-448a-aa24-7866aa2b5425",
+      "name": "Normalize Path Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nconst dx = d.goal_x - d.start_x;\nconst dy = d.goal_y - d.start_y;\n\nconst distance = Math.sqrt(dx * dx + dy * dy);\n\nconst obstacleOnDirectPath =\n  Math.abs(\n    (d.obstacle_y - d.start_y) * dx -\n    (d.obstacle_x - d.start_x) * dy\n  ) < 1.5;\n\nlet path_type = \"DIRECT\";\nlet planning_action = \"PROCEED\";\n\nif (obstacleOnDirectPath) {\n  path_type = \"ALTERNATE\";\n  planning_action = \"REROUTE\";\n}\n\nreturn {\n  json: {\n    ...d,\n    distance: Number(distance.toFixed(2)),\n    path_type,\n    planning_action\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "283edb41-5148-41eb-b354-bce476dc8ab9",
+      "name": "Path Planning Logic"
+    },
+    {
+      "parameters": {
+        "tableId": "robot_messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sender_id",
+              "fieldValue": "PATH_PLANNER"
+            },
+            {
+              "fieldId": "receiver_id",
+              "fieldValue": "={{$json.vehicle_id}}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "PATH_UPDATE"
+            },
+            {
+              "fieldId": "position_x",
+              "fieldValue": "={{$json.start_x}}"
+            },
+            {
+              "fieldId": "position_y",
+              "fieldValue": "={{$json.start_y}}"
+            },
+            {
+              "fieldId": "intent",
+              "fieldValue": "={{$json.planning_action}}"
+            },
+            {
+              "fieldId": "priority",
+              "fieldValue": "1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "c44f7136-d0b8-47d4-a400-5d623dd6ec9b",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "p9ddW1p6n0YIbhMK",
+          "name": "Supabase account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        848,
+        0
+      ],
+      "id": "3e6254b7-0141-4eba-b214-c546fe2a776c",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "04 — Path Planning": [
+      {
+        "json": {
+          "vehicle_id": "AMR_01",
+          "start_x": 2.5,
+          "start_y": 4,
+          "goal_x": 10,
+          "goal_y": 8,
+          "obstacle_x": 6,
+          "obstacle_y": 6
+        }
+      }
+    ]
+  },
+  "connections": {
+    "04 — Path Planning": {
+      "main": [
+        [
+          {
+            "node": "Normalize Path Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Path Data": {
+      "main": [
+        [
+          {
+            "node": "Path Planning Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Path Planning Logic": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "cae07388-942b-491c-a3c6-be58b915b2bb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f93385ad712da53658d4a49fcb3e181bf51a666ac22ed4a29e3633512e887175"
+  },
+  "nodeGroups": [],
+  "id": "xtwYjkXbkFd1skm1",
+  "tags": []
+}
