@@ -1,0 +1,243 @@
+{
+  "name": "03 — Fleet Routing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fleet-routing",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d237f4d4-767f-4b68-8b43-3906299610c5",
+      "name": "Webhook",
+      "webhookId": "5e7bc915-4851-48e0-9282-7ab78b967717"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4e863d2c-0e14-4ead-88d0-69369bd49385",
+              "name": "vehicle_id",
+              "value": "={{$json.vehicle_id}}",
+              "type": "string"
+            },
+            {
+              "id": "6e4a4b7a-0a18-414d-aaa9-100c51131995",
+              "name": "current_x",
+              "value": "={{$json.current_x}}",
+              "type": "number"
+            },
+            {
+              "id": "83e7f4f7-38ad-47f1-aaa9-f72642b95a21",
+              "name": "current_y",
+              "value": "={{$json.current_y}}",
+              "type": "number"
+            },
+            {
+              "id": "a50b3df2-6500-44af-8e1c-9d947d6e7b2f",
+              "name": "destination_x",
+              "value": "={{$json.destination_x}}",
+              "type": "number"
+            },
+            {
+              "id": "b1fd07f8-47d3-42c5-8c42-4245cec8ba33",
+              "name": "destination_y",
+              "value": "={{$json.destination_y}}",
+              "type": "number"
+            },
+            {
+              "id": "a84a9b15-cab8-4d71-b260-00962c370b46",
+              "name": "battery",
+              "value": "={{$json.battery}}",
+              "type": "number"
+            },
+            {
+              "id": "5d4dae4f-fe5d-4885-9cd4-1d41366ea6eb",
+              "name": "priority",
+              "value": "={{$json.priority}}",
+              "type": "number"
+            },
+            {
+              "id": "0608e206-a18b-4b79-a51c-74abe97da475",
+              "name": "traffic_level",
+              "value": "={{$json.traffic_level}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "f33009f5-4f30-4c79-aa42-5f4c097c0822",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nconst dx = d.destination_x - d.current_x;\nconst dy = d.destination_y - d.current_y;\n\nconst distance = Math.sqrt(dx * dx + dy * dy);\n\nlet route_type = \"DIRECT\";\nlet routing_action = \"PROCEED\";\n\nif (d.traffic_level === \"high\") {\n  route_type = \"ALTERNATE\";\n  routing_action = \"REROUTE\";\n}\n\nif (d.battery <= 20) {\n  routing_action = \"CHARGE_FIRST\";\n}\n\nreturn {\n  json: {\n    ...d,\n    distance: Number(distance.toFixed(2)),\n    route_type,\n    routing_action\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "1ba318d3-0c4d-4127-94c8-6e52110911f7",
+      "name": "Run Once for Each Item"
+    },
+    {
+      "parameters": {
+        "tableId": "robot_messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sender_id",
+              "fieldValue": "FLEET_ROUTING"
+            },
+            {
+              "fieldId": "receiver_id",
+              "fieldValue": "={{$json.vehicle_id}}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "ROUTE_UPDATE"
+            },
+            {
+              "fieldId": "position_x",
+              "fieldValue": "={{$json.current_x}}"
+            },
+            {
+              "fieldId": "position_y",
+              "fieldValue": "={{$json.current_y}}"
+            },
+            {
+              "fieldId": "intent",
+              "fieldValue": "={{$json.routing_action}}"
+            },
+            {
+              "fieldId": "priority",
+              "fieldValue": "={{$json.priority}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "7b8869c6-b04f-4f1e-b79c-bb3c9a9b5632",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "p9ddW1p6n0YIbhMK",
+          "name": "Supabase account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        0
+      ],
+      "id": "e8f56a40-7e78-46e2-bb17-c05726ed2c93",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "vehicle_id": "AMR_01",
+          "current_x": 2.5,
+          "current_y": 4,
+          "destination_x": 10,
+          "destination_y": 8,
+          "battery": 92,
+          "priority": 1,
+          "traffic_level": "low"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Run Once for Each Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Once for Each Item": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "82be0922-3290-4331-af67-081dbfc13aaa",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f93385ad712da53658d4a49fcb3e181bf51a666ac22ed4a29e3633512e887175"
+  },
+  "nodeGroups": [],
+  "id": "BvN6aJOpdlVHQcL2",
+  "tags": []
+}
