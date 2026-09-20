@@ -1,0 +1,364 @@
+{
+  "name": "01 — AI Decision",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-decision",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        32
+      ],
+      "id": "b38043e7-8afc-49f9-966a-126c7041ccb7",
+      "name": "Webhook",
+      "webhookId": "5f8a2326-5594-470f-804d-0c45da953d35"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c639723b-62d2-4604-924e-e6bf1a31fc58",
+              "name": "vehicle_id",
+              "value": "={{$json.vehicle_id}}",
+              "type": "string"
+            },
+            {
+              "id": "d0972f49-d764-4eba-9d33-85ecafe19ed2",
+              "name": "battery",
+              "value": "={{$json.battery}}",
+              "type": "number"
+            },
+            {
+              "id": "5bc740d7-28fe-41ed-a8b4-6d000fa76dfe",
+              "name": "speed",
+              "value": "={{$json.speed}}",
+              "type": "number"
+            },
+            {
+              "id": "57212f5e-7308-4eef-bf70-2ba71ec368d2",
+              "name": "mission_status",
+              "value": "={{$json.mission_status}}",
+              "type": "string"
+            },
+            {
+              "id": "d4d5af95-01a4-4642-9be1-49dfe2b9b6bc",
+              "name": "x",
+              "value": "={{$json.x}}",
+              "type": "number"
+            },
+            {
+              "id": "a954e810-ecac-4c01-89ae-54e2b0cc0f58",
+              "name": "y",
+              "value": "={{$json.y}}",
+              "type": "number"
+            },
+            {
+              "id": "60f06cf0-f9bb-41d5-bafd-1fbebf8a4085",
+              "name": "obstacle_detected",
+              "value": "={{$json.obstacle_detected}}",
+              "type": "boolean"
+            },
+            {
+              "id": "22ff94cb-7084-4b66-a428-56a1df08ed81",
+              "name": "traffic_level",
+              "value": "={{$json.traffic_level}}",
+              "type": "string"
+            },
+            {
+              "id": "37b04c15-3eb8-42e7-a359-c8b597a522c5",
+              "name": "destination_x",
+              "value": "={{$json.destination_x}}",
+              "type": "number"
+            },
+            {
+              "id": "6b4a4217-e1a6-4be3-8df2-a9911d2538da",
+              "name": "destination_y",
+              "value": "={{$json.destination_y}}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        32
+      ],
+      "id": "b6dee381-9433-408c-9807-d7e9e5ed411d",
+      "name": "Normalize Fleet Data"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-lite-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-lite-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are the AI decision engine for an autonomous AMR fleet.\n\nAnalyze the robot's current state and decide the safest appropriate action.\n\nRobot ID: {{$json.vehicle_id}}\nBattery: {{$json.battery}}%\nSpeed: {{$json.speed}}\nMission Status: {{$json.mission_status}}\nCurrent Position: ({{$json.x}}, {{$json.y}})\nObstacle Detected: {{$json.obstacle_detected}}\nTraffic Level: {{$json.traffic_level}}\nDestination: ({{$json.destination_x}}, {{$json.destination_y}})\n\nPossible decisions:\nCONTINUE\nSLOW_DOWN\nREROUTE\nSTOP\nRECHARGE\n\nReturn ONLY valid JSON:\n\n{\n  \"vehicle_id\": \"\",\n  \"decision\": \"\",\n  \"risk_level\": \"\",\n  \"reason\": \"\",\n  \"recommended_action\": \"\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        32
+      ],
+      "id": "17f07a8a-5f0e-49a4-a584-e7599de5c0d4",
+      "name": "AI Decision Engine",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "5ATFPful6ppWnaDX",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nlet decision = \"CONTINUE\";\nlet risk_level = \"LOW\";\nlet reason = \"Normal operating conditions.\";\nlet recommended_action = \"Continue toward destination.\";\n\nif (d.obstacle_detected === true) {\n  decision = \"STOP\";\n  risk_level = \"HIGH\";\n  reason = \"Obstacle detected.\";\n  recommended_action = \"Stop immediately.\";\n} \nelse if (d.battery <= 20) {\n  decision = \"RECHARGE\";\n  risk_level = \"HIGH\";\n  reason = \"Battery level is critically low.\";\n  recommended_action = \"Proceed to charging station.\";\n} \nelse if (d.traffic_level === \"high\") {\n  decision = \"SLOW_DOWN\";\n  risk_level = \"MEDIUM\";\n  reason = \"High traffic detected.\";\n  recommended_action = \"Reduce speed and maintain safe distance.\";\n} \nelse if (d.speed > 3) {\n  decision = \"SLOW_DOWN\";\n  risk_level = \"MEDIUM\";\n  reason = \"Vehicle speed is above the safe threshold.\";\n  recommended_action = \"Reduce speed.\";\n}\nreturn {\n  json: {\n    vehicle_id: d.vehicle_id || \"AGV_01\",\n    decision,\n    risk_level,\n    reason,\n    recommended_action\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        128
+      ],
+      "id": "4b467e03-601a-4ac9-ab0c-bd1dddd0b069",
+      "name": "Backup Decision Engine"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f292b4f9-25cf-4673-9c82-8f6024a88696",
+              "leftValue": "={{ $json.content.parts[0].text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        32
+      ],
+      "id": "26f285b4-9ff6-4986-bfdf-6950339533f3",
+      "name": "AI Response Check"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.content?.parts?.[0]?.text || \"\";\n\nlet decision;\n\ntry {\n  decision = JSON.parse(text);\n} catch (error) {\n  decision = {\n    vehicle_id: \"AMR_01\",\n    decision: \"STOP\",\n    risk_level: \"HIGH\",\n    reason: \"AI response could not be parsed.\",\n    recommended_action: \"Stop and reassess.\"\n  };\n}\n\nreturn {\n  json: decision\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        -64
+      ],
+      "id": "134f5f21-4d83-4495-ac3d-22e988c212bf",
+      "name": "Parse Decision"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "robots",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "robot_id",
+              "condition": "eq",
+              "keyValue": "={{$json.vehicle_id}}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "MOVING"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        16
+      ],
+      "id": "4e65327c-7de7-4ac1-aa00-201da2fc26b2",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "PkJj6GuacIgvZV7s",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1488,
+        16
+      ],
+      "id": "c9347e66-0ad4-4b24-9f96-bd9e5a4b3b30",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "vehicle_id": "AMR_01",
+          "battery": 92,
+          "speed": 1.5,
+          "mission_status": "IDLE",
+          "x": 2.5,
+          "y": 4,
+          "obstacle_detected": false,
+          "traffic_level": "low",
+          "destination_x": 10,
+          "destination_y": 8
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Fleet Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Fleet Data": {
+      "main": [
+        [
+          {
+            "node": "AI Decision Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Decision Engine": {
+      "main": [
+        [
+          {
+            "node": "AI Response Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Response Check": {
+      "main": [
+        [
+          {
+            "node": "Parse Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Backup Decision Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Decision": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backup Decision Engine": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c5749e27-08ab-446d-8fcb-0e808b29acfd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f93385ad712da53658d4a49fcb3e181bf51a666ac22ed4a29e3633512e887175"
+  },
+  "nodeGroups": [],
+  "id": "5RrHFuqtPJMjdtuL",
+  "tags": []
+}
