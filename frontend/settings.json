@@ -1,0 +1,16 @@
+{
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/ros2_workspace",
+    "${workspaceFolder}/ros2_workspace/stubs",
+    "${workspaceFolder}/ros2_workspace/src/bel_amr_fleet"
+  ],
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/ros2_workspace",
+    "${workspaceFolder}/ros2_workspace/stubs",
+    "${workspaceFolder}/ros2_workspace/src/bel_amr_fleet"
+  ],
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none",
+    "reportMissingModuleSource": "none"
+  }
+}
